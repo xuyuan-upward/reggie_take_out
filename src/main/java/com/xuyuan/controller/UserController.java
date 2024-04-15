@@ -9,6 +9,7 @@ import com.xuyuan.util.SMSUtils;
 import com.xuyuan.util.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RestController
@@ -24,7 +26,8 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-
+    @Autowired
+    private RedisTemplate redisTemplate;
     /**
      * 发送验证码
      * @param user
@@ -48,7 +51,9 @@ public class UserController {
             e.printStackTrace();
         }
         //生成验证码保存到session里面去*/
-        session.setAttribute(phone,code);
+        /*session.setAttribute(phone,code);*/
+        //将生成的验证码放入redis，有效期为五分钟
+        redisTemplate.opsForValue().set(phone,code,5, TimeUnit.MINUTES);
 
         return R.success("手机验证码短信发送成功");
     }
@@ -60,8 +65,10 @@ public class UserController {
         String phone = map.get("phone").toString();
         //获取验证码
         String code = map.get("code").toString();
-        //从session中获取验证码
-        String Rightcode = (String) session.getAttribute(phone);
+       //从s ession中获取验证码
+        // String Rightcode = (String) session.getAttribute(phone);
+        //从redis中取出来
+        String Rightcode = (String) redisTemplate.opsForValue().get(phone);
         //对比成功
         if (Rightcode != null && Rightcode.equals(code)){
             //登录成功
@@ -78,6 +85,8 @@ public class UserController {
             }
             session.setAttribute(LogStatus.UserlogStatus,user.getId());
             log.info("登录成功");
+            //删除redis
+            redisTemplate.delete(phone);
             return R.success(user);
 
         }
