@@ -3,6 +3,7 @@ package com.xuyuan.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.xuyuan.aop.MyAop;
 import com.xuyuan.common.LogStatus;
 import com.xuyuan.common.R;
 import com.xuyuan.dto.DishDto;
@@ -44,9 +45,14 @@ public class DishController {
      * @param dishDto
      * @return
      */
+
     @PostMapping
     public R<String> save(@RequestBody DishDto dishDto) {
         log.info(dishDto.toString());
+        dishService.UpdatedishWithFlavor(dishDto);
+        //清理某个修改分类的菜品缓存数据
+        String key = "dish_" + dishDto.getCategoryId() + "_" + dishDto.getStatus();
+        redisTemplate.delete(key);
         dishService.dishWithFlavor(dishDto);
         return R.success("添加成功");
 
@@ -84,6 +90,7 @@ public class DishController {
     /**
      * 根据菜品ID修改信息
      */
+
     @PutMapping
     public R<String> update(@RequestBody DishDto dishDto) {
         log.info("修改菜品信息");
@@ -107,6 +114,7 @@ public class DishController {
     /**
      * 删除菜品
      */
+
     @DeleteMapping()
     public R<String> delete( @RequestParam List<Long> ids){
         log.info("删除菜品");
@@ -117,11 +125,13 @@ public class DishController {
     /**
      * 启用和禁用菜品
      */
+
     @PostMapping("status/{status}")
     public R<String> status(@PathVariable Integer status ,@RequestParam List<Long> ids){
         log.info("启用和禁用菜品");
         //根据id查找dish
         List<Dish> dishList = dishService.listByIds(ids);
+
         //设置状态
         List<Dish> collect = dishList.stream().map(item -> {
             item.setStatus(status);

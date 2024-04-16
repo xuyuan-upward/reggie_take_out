@@ -16,6 +16,9 @@ spring:
   redis:
     port: 6379
     host: localhost
+  cache:
+    redis:
+      time-to-live: 180000 #缓存有效时间
 
 mybatis-plus:
   configuration:
