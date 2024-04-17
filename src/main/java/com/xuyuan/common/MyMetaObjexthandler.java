@@ -18,7 +18,7 @@ public class MyMetaObjexthandler implements MetaObjectHandler {
         log.info(metaObject.toString());
 
         //设置初始密码
-        metaObject.setValue("password",LogStatus.InitPassword);
+        metaObject.setValue("password",DigestUtils.md5DigestAsHex(LogStatus.InitPassword.getBytes()));
         metaObject.setValue("createTime",LocalDateTime.now());
         metaObject.setValue("updateTime",LocalDateTime.now());
         //LogStatus.getCurrentSessionId(): 获取session中存放的id值
